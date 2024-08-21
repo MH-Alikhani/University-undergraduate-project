@@ -1,7 +1,7 @@
 {
   "name": "university_undergraduate_project",
   "private": true,
-  "version": "16.73.16",
+  "version": "16.73.18",
   "type": "module",
   "scripts": {
     "dev": "vite",
