@@ -14,43 +14,65 @@ import {
 } from "firebase/firestore";
 import { useUserStore } from "../../../../lib/userStore";
 
+/**
+ * AddUser component allows searching for a user by username and adding them to chats.
+ * It uses Firebase Firestore to manage user and chat data.
+ *
+ * @component
+ * @param {Object} props - The component props.
+ * @param {React.Ref} ref - The ref forwarded to the component.
+ * @returns {JSX.Element} The rendered AddUser component.
+ */
 const AddUser = forwardRef((props, ref) => {
-  const [user, setUser] = useState(null);
-  const { currentUser } = useUserStore();
+  const [user, setUser] = useState(null); // State to hold the found user
+  const { currentUser } = useUserStore(); // Retrieve current user from the user store
 
+  /**
+   * Handles the search form submission, fetching user data from Firestore.
+   *
+   * @param {React.FormEvent} e - The form submission event.
+   * @returns {Promise<void>} A promise that resolves when the search is complete.
+   */
   const handleSearch = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const username = formData.get("username");
+    const username = formData.get("username"); // Get username from form input
 
     try {
       const userRef = collection(db, "users");
-      const q = query(userRef, where("username", "==", username));
-      const querySnapShot = await getDocs(q);
+      const q = query(userRef, where("username", "==", username)); // Create a query to find the user
+      const querySnapShot = await getDocs(q); // Execute the query
 
       if (!querySnapShot.empty) {
-        setUser(querySnapShot.docs[0].data());
+        setUser(querySnapShot.docs[0].data()); // Set the found user data
       } else {
-        setUser(null);
+        setUser(null); // Reset user state if not found
         console.log("User not found.");
       }
     } catch (err) {
-      console.error("Error searching user:", err);
+      console.error("Error searching user:", err); // Log any errors encountered
     }
   };
 
+  /**
+   * Handles adding the found user to chats.
+   *
+   * @returns {Promise<void>} A promise that resolves when the user is added to chats.
+   */
   const handleAdd = async () => {
     const chatRef = collection(db, "chats");
     const userChatsRef = collection(db, "userchats");
 
     try {
-      const newChatRef = doc(chatRef);
+      const newChatRef = doc(chatRef); // Create a reference for a new chat document
 
+      // Set up the new chat document with initial data
       await setDoc(newChatRef, {
         createdAt: serverTimestamp(),
         messages: [],
       });
 
+      // Update user chats for the current user
       await updateDoc(doc(userChatsRef, user.id), {
         chats: arrayUnion({
           chatId: newChatRef.id,
@@ -60,6 +82,7 @@ const AddUser = forwardRef((props, ref) => {
         }),
       });
 
+      // Update user chats for the found user
       await updateDoc(doc(userChatsRef, currentUser.id), {
         chats: arrayUnion({
           chatId: newChatRef.id,
@@ -69,7 +92,7 @@ const AddUser = forwardRef((props, ref) => {
         }),
       });
     } catch (err) {
-      console.log(err);
+      console.log(err); // Log any errors encountered during adding
     }
   };
 
@@ -97,6 +120,7 @@ const AddUser = forwardRef((props, ref) => {
   );
 });
 
+// Set display name for the component for better debugging
 AddUser.displayName = "AddUser";
 
 export default AddUser;
